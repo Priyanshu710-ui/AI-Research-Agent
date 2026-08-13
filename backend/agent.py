@@ -1,4 +1,7 @@
 import os
+import random
+import time
+
 from dotenv import load_dotenv
 from google import genai
 from tavily import TavilyClient
@@ -17,7 +20,14 @@ if not TAVILY_API_KEY:
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
 
-MODEL = "gemini-3.5-flash"
+# Primary model + fallbacks.
+# GEMINI_MODEL can override the primary model in Render environment variables.
+PRIMARY_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODELS = list(dict.fromkeys([
+    PRIMARY_MODEL,
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+]))
 
 
 # =========================================================
@@ -25,9 +35,7 @@ MODEL = "gemini-3.5-flash"
 # =========================================================
 
 def extract_image_url(image):
-    """
-    Extract an image URL from different Tavily image formats.
-    """
+    """Extract an image URL from different Tavily image formats."""
 
     if isinstance(image, str):
         return image
@@ -48,13 +56,7 @@ def extract_image_url(image):
 # =========================================================
 
 def search_web(query: str, max_results: int = 6):
-    """
-    Search the web using Tavily.
-
-    Returns both:
-    - web sources
-    - image URLs
-    """
+    """Search the web using Tavily and return sources + images."""
 
     try:
         results = tavily_client.search(
@@ -68,18 +70,11 @@ def search_web(query: str, max_results: int = 6):
 
         for r in results.get("results", []):
             if r.get("url"):
-                sources.append(
-                    {
-                        "title": r.get("title", ""),
-                        "url": r.get("url", ""),
-                        "content": r.get("content", ""),
-                    }
-                )
-
-        # -------------------------------------------------
-        # IMPORTANT:
-        # DO NOT THROW AWAY TAVILY IMAGES
-        # -------------------------------------------------
+                sources.append({
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "content": r.get("content", ""),
+                })
 
         images = []
 
@@ -88,25 +83,16 @@ def search_web(query: str, max_results: int = 6):
 
             if (
                 image_url
-                and image_url.startswith(
-                    ("http://", "https://")
-                )
+                and image_url.startswith(("http://", "https://"))
                 and image_url not in images
             ):
                 images.append(image_url)
 
-        return {
-            "sources": sources,
-            "images": images,
-        }
+        return {"sources": sources, "images": images}
 
     except Exception as e:
         print("Web search error:", e)
-
-        return {
-            "sources": [],
-            "images": [],
-        }
+        return {"sources": [], "images": []}
 
 
 # =========================================================
@@ -114,9 +100,7 @@ def search_web(query: str, max_results: int = 6):
 # =========================================================
 
 def search_images(query: str, max_images: int = 4):
-    """
-    Search specifically for images using Tavily.
-    """
+    """Search specifically for images using Tavily."""
 
     try:
         results = tavily_client.search(
@@ -128,19 +112,12 @@ def search_images(query: str, max_images: int = 4):
 
         images = []
 
-        # -------------------------------------------------
-        # Get images returned directly by Tavily
-        # -------------------------------------------------
-
         for image in results.get("images", []):
-
             image_url = extract_image_url(image)
 
             if (
                 image_url
-                and image_url.startswith(
-                    ("http://", "https://")
-                )
+                and image_url.startswith(("http://", "https://"))
                 and image_url not in images
             ):
                 images.append(image_url)
@@ -151,11 +128,7 @@ def search_images(query: str, max_images: int = 4):
         return images
 
     except Exception as e:
-        print(
-            f"Image search error for '{query}':",
-            e
-        )
-
+        print(f"Image search error for '{query}':", e)
         return []
 
 
@@ -163,36 +136,83 @@ def search_images(query: str, max_images: int = 4):
 # GEMINI
 # =========================================================
 
-def generate_text(
-    prompt: str,
-    system_instruction: str
-):
+def _is_transient_gemini_error(error):
+    """Return True for temporary Gemini capacity/rate-limit failures."""
+
+    message = str(error).upper()
+    return any(code in message for code in (
+        "503",
+        "UNAVAILABLE",
+        "429",
+        "RESOURCE_EXHAUSTED",
+        "500",
+        "INTERNAL",
+        "504",
+        "DEADLINE_EXCEEDED",
+        "TIMEOUT",
+    ))
+
+
+def generate_text(prompt: str, system_instruction: str):
     """
-    Generate text using Gemini.
+    Generate text using Gemini with retry + model fallback.
+
+    Temporary 503/429/5xx errors are retried with exponential backoff.
+    If the primary model remains unavailable, a stable Flash-Lite model is tried.
     """
 
-    response = gemini_client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config={
-            "system_instruction": system_instruction,
-        },
-    )
+    last_error = None
 
-    return response.text or ""
+    for model_index, model in enumerate(GEMINI_MODELS):
+        # Two attempts per model. The Gemini SDK also has its own transient retry logic.
+        for attempt in range(2):
+            try:
+                print(f"Gemini request using {model} (attempt {attempt + 1}/2)")
+
+                response = gemini_client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config={
+                        "system_instruction": system_instruction,
+                    },
+                )
+
+                text = response.text or ""
+
+                if text.strip():
+                    return text
+
+                raise RuntimeError(f"Gemini returned an empty response from {model}")
+
+            except Exception as error:
+                last_error = error
+                print(f"Gemini error on {model}: {error}")
+
+                # Do not hide permanent errors such as invalid API keys or bad requests.
+                if not _is_transient_gemini_error(error):
+                    raise
+
+                if attempt < 1:
+                    delay = 2 * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"Temporary Gemini failure. Retrying in {delay:.1f}s...")
+                    time.sleep(delay)
+
+        if model_index < len(GEMINI_MODELS) - 1:
+            next_model = GEMINI_MODELS[model_index + 1]
+            print(f"{model} is unavailable. Falling back to {next_model}.")
+
+    raise RuntimeError(
+        "Gemini is temporarily unavailable on all configured models. "
+        "Please try again in a moment."
+    ) from last_error
 
 
 # =========================================================
 # QUERY PLANNER
 # =========================================================
 
-def plan_subqueries(
-    topic: str,
-    n: int = 4
-):
-    """
-    Break the topic into focused research questions.
-    """
+def plan_subqueries(topic: str, n: int = 4):
+    """Break the topic into focused research questions."""
 
     system_instruction = f"""
 You are an expert research planner.
@@ -214,10 +234,7 @@ Do not use bullet points.
 Do not add explanations.
 """
 
-    text = generate_text(
-        topic,
-        system_instruction
-    )
+    text = generate_text(topic, system_instruction)
 
     queries = [
         q.strip("-• ").strip()
@@ -238,31 +255,16 @@ Do not add explanations.
 # =========================================================
 
 def create_image_queries(topic: str):
-    """
-    Create focused image searches for every report section.
-    """
+    """Create focused image searches for every report section."""
 
     return {
-        "Executive Summary":
-            f"{topic} overview",
-
-        "1. Background":
-            f"{topic} history background",
-
-        "2. Key Findings":
-            f"{topic} key findings",
-
-        "3. Detailed Analysis":
-            f"{topic} detailed analysis",
-
-        "4. Benefits and Opportunities":
-            f"{topic} benefits opportunities",
-
-        "5. Challenges and Limitations":
-            f"{topic} challenges limitations",
-
-        "6. Future Outlook":
-            f"{topic} future developments",
+        "Executive Summary": f"{topic} overview",
+        "1. Background": f"{topic} history background",
+        "2. Key Findings": f"{topic} key findings",
+        "3. Detailed Analysis": f"{topic} detailed analysis",
+        "4. Benefits and Opportunities": f"{topic} benefits opportunities",
+        "5. Challenges and Limitations": f"{topic} challenges limitations",
+        "6. Future Outlook": f"{topic} future developments",
     }
 
 
@@ -271,32 +273,21 @@ def create_image_queries(topic: str):
 # =========================================================
 
 def collect_section_images(topic: str):
-    """
-    Search for images separately for every report section.
-    """
+    """Search for images separately for every report section."""
 
     image_queries = create_image_queries(topic)
-
     section_images = {}
 
     for section, query in image_queries.items():
-
-        print("")
-        print("=" * 60)
+        print("\n" + "=" * 60)
         print(f"IMAGE SEARCH: {section}")
         print(f"QUERY: {query}")
         print("=" * 60)
 
-        images = search_images(
-            query,
-            max_images=3
-        )
-
+        images = search_images(query, max_images=3)
         section_images[section] = images
 
-        print(
-            f"Found {len(images)} images"
-        )
+        print(f"Found {len(images)} images")
 
         for image in images:
             print(image)
@@ -308,13 +299,8 @@ def collect_section_images(topic: str):
 # REPORT WRITER
 # =========================================================
 
-def write_report(
-    topic: str,
-    sources: list
-):
-    """
-    Generate a structured cited research report.
-    """
+def write_report(topic: str, sources: list):
+    """Generate a structured cited research report."""
 
     source_block = "\n\n".join(
         f"""
@@ -410,10 +396,7 @@ Never fabricate information.
 Follow the requested section structure exactly.
 """
 
-    return generate_text(
-        prompt,
-        system_instruction
-    )
+    return generate_text(prompt, system_instruction)
 
 
 # =========================================================
@@ -421,162 +404,76 @@ Follow the requested section structure exactly.
 # =========================================================
 
 def run_research(topic: str):
-    """
-    Run the complete research pipeline.
-    """
+    """Run the complete research pipeline."""
 
     topic = topic.strip()
 
     if not topic:
-        raise ValueError(
-            "Research topic cannot be empty."
-        )
+        raise ValueError("Research topic cannot be empty.")
 
-    # =====================================================
     # 1. CREATE RESEARCH QUERIES
-    # =====================================================
+    queries = plan_subqueries(topic, n=4)
 
-    queries = plan_subqueries(
-        topic,
-        n=4
-    )
-
-    print("")
-    print("=" * 70)
+    print("\n" + "=" * 70)
     print("RESEARCH QUERIES")
     print("=" * 70)
 
     for query in queries:
         print(query)
 
-    # =====================================================
     # 2. SEARCH WEB
-    # =====================================================
-
     all_sources = []
-
     seen_urls = set()
-
-    # These are general images collected during
-    # the normal web searches.
     general_images = []
-
     seen_images = set()
 
     for query in queries:
+        print(f"\nSearching web: {query}")
 
-        print("")
-        print(f"Searching web: {query}")
-
-        search_result = search_web(
-            query,
-            max_results=6
-        )
-
-        # -------------------------------------------------
-        # SOURCES
-        # -------------------------------------------------
+        search_result = search_web(query, max_results=6)
 
         for source in search_result["sources"]:
+            url = source.get("url", "")
 
-            url = source.get(
-                "url",
-                ""
-            )
-
-            if (
-                url
-                and url not in seen_urls
-            ):
+            if url and url not in seen_urls:
                 seen_urls.add(url)
-
-                all_sources.append(
-                    source
-                )
-
-        # -------------------------------------------------
-        # IMAGES
-        # -------------------------------------------------
+                all_sources.append(source)
 
         for image in search_result["images"]:
-
             if image not in seen_images:
-
                 seen_images.add(image)
+                general_images.append(image)
 
-                general_images.append(
-                    image
-                )
-
-    # =====================================================
     # 3. FALLBACK SEARCH
-    # =====================================================
-
     if not all_sources:
+        print("No sources found. Running fallback search.")
 
-        print(
-            "No sources found. Running fallback search."
-        )
-
-        fallback = search_web(
-            topic,
-            max_results=8
-        )
-
+        fallback = search_web(topic, max_results=8)
         all_sources = fallback["sources"]
 
         for image in fallback["images"]:
-
             if image not in seen_images:
-
                 seen_images.add(image)
-
-                general_images.append(
-                    image
-                )
+                general_images.append(image)
 
     if not all_sources:
+        raise RuntimeError("No web sources were found for this research topic.")
 
-        raise RuntimeError(
-            "No web sources were found for this research topic."
-        )
-
-    # =====================================================
     # 4. LIMIT SOURCES
-    # =====================================================
-
     all_sources = all_sources[:20]
 
-    # =====================================================
     # 5. GENERATE REPORT
-    # =====================================================
-
-    print("")
-    print("=" * 70)
+    print("\n" + "=" * 70)
     print("GENERATING REPORT")
     print("=" * 70)
 
-    report = write_report(
-        topic,
-        all_sources
-    )
+    report = write_report(topic, all_sources)
 
-    # =====================================================
     # 6. SEARCH SECTION-SPECIFIC IMAGES
-    # =====================================================
+    section_images = collect_section_images(topic)
 
-    section_images = collect_section_images(
-        topic
-    )
-
-    # =====================================================
-    # 7. FALLBACK:
-    # IF A SECTION HAS NO IMAGES,
-    # USE GENERAL RESEARCH IMAGES
-    # =====================================================
-
+    # 7. FALLBACK IMAGES
     if general_images:
-
         sections = [
             "Executive Summary",
             "1. Background",
@@ -587,78 +484,38 @@ def run_research(topic: str):
             "6. Future Outlook",
         ]
 
-        for index, section in enumerate(
-            sections
-        ):
-
-            current_images = section_images.get(
-                section,
-                []
-            )
+        for index, section in enumerate(sections):
+            current_images = section_images.get(section, [])
 
             if not current_images:
+                start = index * 2
+                fallback_images = general_images[start:start + 2]
 
-                start = (
-                    index * 2
-                )
-
-                fallback_images = general_images[
-                    start:start + 2
-                ]
-
-                # If we run out of unique images,
-                # reuse existing images.
                 if not fallback_images:
+                    fallback_images = general_images[:2]
 
-                    fallback_images = (
-                        general_images[:2]
-                    )
+                section_images[section] = fallback_images
 
-                section_images[
-                    section
-                ] = fallback_images
-
-    # =====================================================
     # 8. PRINT FINAL IMAGE COUNT
-    # =====================================================
-
-    print("")
-    print("=" * 70)
+    print("\n" + "=" * 70)
     print("FINAL SECTION IMAGES")
     print("=" * 70)
 
     for section, images in section_images.items():
+        print(f"{section}: {len(images)} images")
 
-        print(
-            f"{section}: {len(images)} images"
-        )
-
-    # =====================================================
     # 9. RETURN EVERYTHING TO FRONTEND
-    # =====================================================
-
     return {
         "topic": topic,
-
         "queries_used": queries,
-
         "sources": [
             {
-                "title": source[
-                    "title"
-                ],
-                "url": source[
-                    "url"
-                ],
+                "title": source["title"],
+                "url": source["url"],
             }
             for source in all_sources
         ],
-
         "report_markdown": report,
-
         "section_images": section_images,
-
-        # Also return general images.
-        # This gives the frontend another fallback.
         "images": general_images[:20],
     }
