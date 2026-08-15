@@ -1,24 +1,113 @@
 # AI Research Agent
 
-An AI-powered research assistant that searches the web, analyzes multiple sources, generates a structured cited report, and provides section-specific visual references with downloadable PDF output.
+<p align="center">
+  <img src="https://img.shields.io/badge/AI-Gemini-8E75B2?style=for-the-badge" alt="Gemini" />
+  <img src="https://img.shields.io/badge/Search-Tavily-111827?style=for-the-badge" alt="Tavily" />
+  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Frontend-Next.js-000000?style=for-the-badge" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-111111?style=for-the-badge" alt="Deployment" />
+</p>
+
+<p align="center">
+  <strong>Research less. Understand more.</strong>
+</p>
+
+<p align="center">
+  An AI research workspace that turns a topic into a structured, source-backed report — complete with citations, section-specific visuals, and a downloadable PDF.
+</p>
+
+<p align="center">
+  <a href="https://ai-research-agent-nine-steel.vercel.app">Live Demo</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#run-locally">Run locally</a>
+</p>
+
+---
+
+## ✨ Why this project is interesting
+
+Most research tools stop at search results. **AI Research Agent** goes a step further: it plans the research, searches multiple sources, synthesizes the findings into a structured report, preserves source links as citations, researches useful visuals for individual sections, and packages the result as a PDF.
+
+That makes it a practical example of an **agentic AI workflow** rather than a simple chatbot wrapper.
 
 ## 🚀 Live Demo
 
-**[Open the deployed AI Research Agent](https://ai-research-agent-nine-steel.vercel.app)**
+**[Open AI Research Agent](https://ai-research-agent-nine-steel.vercel.app)**
 
-## ✨ Features
+The current README documents the production deployment as Vercel for the frontend and Render for the FastAPI backend. The backend requires Gemini and Tavily credentials as environment variables. 
 
-- 🔎 Autonomous web research using Tavily
-- 🧠 Research planning and report generation with Google Gemini
-- 📝 Structured Markdown research reports
-- 🔗 Inline citations linked to original sources
-- 🖼️ Section-specific image research
-- 📄 Downloadable PDF reports
-- ⚡ Next.js frontend
-- 🚀 FastAPI backend
-- 🐳 Docker and Docker Compose support
-- ☁️ Frontend deployed on Vercel
-- ☁️ Backend deployed on Render
+## 🎯 Features
+
+| Capability | What it does |
+|---|---|
+| 🔎 Autonomous web research | Searches across multiple relevant sources with Tavily |
+| 🧠 Research planning | Uses Gemini to turn a broad topic into focused research queries |
+| 📝 Structured report generation | Produces an organized Markdown report instead of a raw search dump |
+| 🔗 Inline citations | Connects claims back to the original sources |
+| 🖼️ Visual research | Finds section-specific images to support the report |
+| 📄 PDF export | Turns the final report into a downloadable PDF |
+| ⚡ Modern frontend | Next.js + React + Tailwind-based research UI |
+| 🐳 Containerized | Docker and Docker Compose support |
+| ☁️ Production deployment | Vercel frontend + Render backend |
+
+## 🧩 Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │       User Topic     │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    Next.js Frontend  │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    FastAPI Backend   │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+          ┌──────────────────┐             ┌──────────────────┐
+          │   Gemini        │             │     Tavily       │
+          │ Research /      │             │ Web + Image      │
+          │ Synthesis       │             │ Search           │
+          └────────┬─────────┘             └────────┬─────────┘
+                   │                                  │
+                   └──────────────┬───────────────────┘
+                                  ▼
+                       ┌──────────────────────┐
+                       │  Cited Research     │
+                       │  Report + Visuals   │
+                       └──────────┬───────────┘
+                                  │
+                                  ▼
+                       ┌──────────────────────┐
+                       │      PDF Export      │
+                       └──────────────────────┘
+```
+
+## 🔄 How it works
+
+```text
+1. User enters a research topic
+        ↓
+2. Gemini creates focused research queries
+        ↓
+3. Tavily searches the web
+        ↓
+4. Sources are collected and deduplicated
+        ↓
+5. Gemini synthesizes a cited report
+        ↓
+6. Tavily finds section-specific images
+        ↓
+7. Frontend renders the report, sources, and visuals
+        ↓
+8. User downloads a PDF
+```
 
 ## 🛠️ Tech Stack
 
@@ -51,44 +140,39 @@ AI-Research-Agent/
 └── README.md
 ```
 
-## 🔑 API Keys
+## 🔐 Environment Variables
 
-The backend requires two API keys:
-
-- **Gemini API key** — used for research planning and report generation.
-- **Tavily API key** — used for web and image search.
-
-Create your local environment file from the example:
+Create a local `.env` file from `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Then add your real keys:
+Then add:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 TAVILY_API_KEY=your_tavily_api_key_here
 ```
 
-**Never commit your real `.env` file or API keys to GitHub.**
+**Never commit real API keys.** Keep secrets server-side and use `.env.example` for documentation only.
 
 ## 💻 Run Locally
 
-### Option 1 — Docker Compose
+### Option A — Docker Compose
 
-From the project root:
+From the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-Open:
+Then open:
 
-- Frontend: http://localhost:3000
-- Backend API docs: http://localhost:8000/docs
+- Frontend: `http://localhost:3000`
+- Backend docs: `http://localhost:8000/docs`
 
-### Option 2 — Run Backend and Frontend Separately
+### Option B — Run services separately
 
 #### Backend
 
@@ -97,15 +181,13 @@ cd backend
 python -m venv venv
 ```
 
-Activate the virtual environment.
-
-**Windows:**
+**Windows**
 
 ```bash
 venv\Scripts\activate
 ```
 
-**macOS/Linux:**
+**macOS / Linux**
 
 ```bash
 source venv/bin/activate
@@ -117,21 +199,17 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Make sure your environment variables are available, then start FastAPI:
+Start FastAPI:
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Backend runs at:
-
-```text
-http://localhost:8000
-```
+Backend: `http://localhost:8000`
 
 #### Frontend
 
-Open a second terminal:
+In a second terminal:
 
 ```bash
 cd frontend
@@ -139,41 +217,11 @@ npm install
 npm run dev
 ```
 
-Frontend runs at:
-
-```text
-http://localhost:3000
-```
-
-## 🔄 How It Works
-
-```text
-User enters a research topic
-          ↓
-Next.js Frontend
-          ↓
-FastAPI Backend
-          ↓
-Gemini creates focused research queries
-          ↓
-Tavily searches the web
-          ↓
-Sources are collected and deduplicated
-          ↓
-Gemini writes the cited research report
-          ↓
-Tavily finds section-specific images
-          ↓
-Frontend renders report + sources + visuals
-          ↓
-User downloads the report as PDF
-```
+Frontend: `http://localhost:3000`
 
 ## 🌐 Deployment
 
 ### Frontend — Vercel
-
-The frontend is deployed on Vercel.
 
 Live URL:
 
@@ -181,24 +229,22 @@ https://ai-research-agent-nine-steel.vercel.app
 
 ### Backend — Render
 
-The FastAPI backend is deployed on Render.
-
 Backend URL:
 
 https://ai-research-agent-li2u.onrender.com
 
-For a new deployment, set these environment variables on the backend service:
+Configure the backend with:
 
 ```text
 GEMINI_API_KEY
 TAVILY_API_KEY
 ```
 
-The frontend should use the backend URL through `NEXT_PUBLIC_API_URL` or the configured production API URL.
+Configure the frontend to use the production backend URL through the project's production API environment variable/configuration.
 
 ## 🔌 API
 
-The main research endpoint is:
+Main research endpoint:
 
 ```http
 POST /research
@@ -212,15 +258,26 @@ Example request:
 }
 ```
 
-## 🔒 Security Notes
+## 🧪 Production Notes
 
-- API keys are stored as environment variables.
-- `.env` files are ignored by Git.
-- Do not expose Gemini or Tavily keys in frontend code.
-- For production-scale use, add authentication, rate limiting, logging, and stronger CORS restrictions.
+The repository documents the current deployment as working in production. For a larger public deployment, consider adding authentication, rate limiting, structured logging, stricter CORS, request quotas, and observability.
 
-## 📌 Status
+## 🗺️ Roadmap
 
-**Production deployment working.**
+- [x] Web research pipeline
+- [x] Gemini report synthesis
+- [x] Source citations
+- [x] Section-specific visuals
+- [x] PDF export
+- [x] Docker support
+- [x] Vercel + Render deployment
+- [ ] Research history and saved projects
+- [ ] Streaming generation progress
+- [ ] Source-quality scoring
+- [ ] Multi-agent research workflows
 
-Built with Next.js, FastAPI, Gemini, Tavily, Docker, Vercel, and Render.
+## 👨‍💻 Built By
+
+**Priyanshu Sharma**
+
+Built as a full-stack exploration of agentic research workflows using Gemini, Tavily, FastAPI, Next.js, Docker, Vercel, and Render.
