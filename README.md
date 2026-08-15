@@ -22,6 +22,12 @@
   <img src="https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-111111?style=for-the-badge" alt="Deployment" />
 </p>
 
+<p>
+  <img src="https://img.shields.io/github/stars/Priyanshu710-ui/AI-Research-Agent?style=flat-square" alt="GitHub stars" />
+  <img src="https://img.shields.io/github/forks/Priyanshu710-ui/AI-Research-Agent?style=flat-square" alt="GitHub forks" />
+  <img src="https://img.shields.io/github/last-commit/Priyanshu710-ui/AI-Research-Agent?style=flat-square" alt="Last commit" />
+</p>
+
 <p><em>Research less. Understand more.</em></p>
 
 </div>
@@ -157,6 +163,8 @@ AI-Research-Agent/
 ├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── README.md
 ```
 
@@ -183,6 +191,7 @@ TAVILY_API_KEY=your_tavily_api_key_here
 - Keep Gemini and Tavily credentials on the backend.
 - Use `.env.example` only as a template.
 - For public production use, add authentication, rate limiting, logging, and stricter CORS.
+- See [SECURITY.md](SECURITY.md) for the security policy.
 
 ---
 
@@ -302,6 +311,12 @@ This project demonstrates more than a single API integration. It combines:
 - **Cloud deployment**
 
 It is a practical example of connecting an AI reasoning layer to real external tools and a usable product interface.
+
+---
+
+## 🤝 Contributing
+
+Ideas, bug fixes, UI improvements, research-quality improvements, and documentation are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
 ---
 
