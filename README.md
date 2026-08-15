@@ -10,15 +10,16 @@
   <a href="#-how-it-works">How it works</a>
   ·
   <a href="#-run-locally">Run locally</a>
+  ·
+  <a href="#-roadmap">Roadmap</a>
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/AI-Google%20Gemini-8E75B2?style=flat-square" alt="Gemini" />
-  <img src="https://img.shields.io/badge/Search-Tavily-111827?style=flat-square" alt="Tavily" />
-  <img src="https://img.shields.io/badge/API-FastAPI-009688?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/UI-Next.js-000000?style=flat-square" alt="Next.js" />
-  <img src="https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-111111?style=flat-square" alt="Deployment" />
-  <img src="https://img.shields.io/badge/Containers-Docker-2496ED?style=flat-square" alt="Docker" />
+  <img src="https://img.shields.io/badge/AI-Google%20Gemini-8E75B2?style=for-the-badge" alt="Gemini" />
+  <img src="https://img.shields.io/badge/Search-Tavily-111827?style=for-the-badge" alt="Tavily" />
+  <img src="https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/UI-Next.js-000000?style=for-the-badge" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-111111?style=for-the-badge" alt="Deployment" />
 </p>
 
 <p><em>Research less. Understand more.</em></p>
@@ -27,83 +28,87 @@
 
 ---
 
-## 💡 What is this?
+## 🧠 What is this?
 
 **AI Research Agent** is a full-stack research workspace that turns a natural-language topic into a structured, source-backed report.
 
-Instead of dumping search results on the user, it runs a multi-step workflow:
+Instead of stopping at search results, it runs a multi-step workflow:
 
-**Plan → Search → Synthesize → Cite → Illustrate → Export**
+> **Plan → Search → Collect → Synthesize → Cite → Illustrate → Export**
 
 The result is a readable research report with inline source links, section-specific visuals, and PDF export.
 
-> **Why it's different:** this is an agentic research workflow, not just a chatbot with a search box.
-
----
-
-## ✨ Highlights
-
-| | Capability | What happens |
-|---|---|---|
-| 🔎 | **Autonomous research** | Tavily searches multiple relevant sources for the topic. |
-| 🧠 | **Research planning** | Gemini turns a broad question into focused research queries. |
-| 📝 | **Report synthesis** | Findings are transformed into a structured Markdown report. |
-| 🔗 | **Source citations** | Claims stay connected to their original sources. |
-| 🖼️ | **Visual research** | Relevant images are researched for individual sections. |
-| 📄 | **PDF export** | The finished report can be downloaded as a PDF. |
-| ⚡ | **Modern UI** | Next.js + React + Tailwind provide the research workspace. |
-| 🐳 | **Dockerized** | Backend and frontend can run together with Docker Compose. |
-| ☁️ | **Production deployment** | Frontend on Vercel, backend on Render. |
+> **Why it's interesting:** this is an agentic research workflow, not just a chatbot with a search box.
 
 ---
 
 ## 🚀 Live Demo
 
-**[Open AI Research Agent →](https://ai-research-agent-nine-steel.vercel.app)**
+### [Open AI Research Agent →](https://ai-research-agent-nine-steel.vercel.app)
 
-The current project is documented as a production deployment with a Vercel frontend and Render FastAPI backend.
+The project is documented as a production deployment with a Vercel frontend and Render FastAPI backend.
 
 ---
 
-## 🧩 How it works
+## ✨ What you can do
+
+| | Capability | Result |
+|---|---|---|
+| 🔎 | **Autonomous research** | Searches multiple relevant sources with Tavily |
+| 🧠 | **Research planning** | Gemini turns a broad question into focused queries |
+| 📝 | **Report synthesis** | Findings become a structured research report |
+| 🔗 | **Inline citations** | Claims stay connected to original sources |
+| 🖼️ | **Visual research** | Section-specific images support the report |
+| 📄 | **PDF export** | Download the finished report |
+| ⚡ | **Modern workspace** | Next.js + React + Tailwind research UI |
+| 🐳 | **Dockerized** | Run the stack with Docker Compose |
+| ☁️ | **Cloud deployed** | Vercel frontend + Render backend |
+
+---
+
+## 🖥️ Product flow
 
 ```text
-┌──────────────────────┐
-│    User enters topic │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│   Next.js Frontend   │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│    FastAPI Backend   │
-└──────────┬───────────┘
-           │
-     ┌─────┴─────┐
-     ▼           ▼
-┌──────────┐ ┌──────────┐
-│  Gemini  │ │  Tavily  │
-│ Planning │ │   Web    │
-│ Synthesis│ │  Search  │
-└────┬─────┘ └────┬─────┘
-     │            │
-     └──────┬─────┘
-            ▼
-┌──────────────────────┐
-│ Structured Research  │
-│ + Citations + Images │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│       PDF Export     │
-└──────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                       USER QUESTION                          │
+│          "How is AI changing software engineering?"         │
+└─────────────────────────────┬────────────────────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│                         RESEARCH PLAN                        │
+│             Gemini creates focused search queries            │
+└─────────────────────────────┬────────────────────────────────┘
+                              ↓
+┌─────────────────────────────┴────────────────────────────────┐
+│                 WEB + IMAGE DISCOVERY                        │
+│                   Tavily retrieves sources                    │
+└─────────────────────────────┬────────────────────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│                    SOURCE-AWARE SYNTHESIS                    │
+│             Gemini turns evidence into a report              │
+└─────────────────────────────┬────────────────────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│                  REPORT + CITATIONS + VISUALS                │
+└─────────────────────────────┬────────────────────────────────┘
+                              ↓
+┌──────────────────────────────────────────────────────────────┐
+│                          PDF EXPORT                           │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### The pipeline
+---
+
+## 🧩 Architecture
+
+![AI Research Agent Architecture](docs/architecture.svg)
+
+<sub>Plan → Search → Collect → Synthesize → Cite → Illustrate → Export</sub>
+
+---
+
+## 🔄 How it works
 
 1. **Topic** — the user enters a research question.
 2. **Planning** — Gemini creates focused research queries.
@@ -111,7 +116,7 @@ The current project is documented as a production deployment with a Vercel front
 4. **Collection** — sources are gathered and deduplicated.
 5. **Synthesis** — Gemini writes a structured, cited report.
 6. **Visual research** — relevant images are found for sections.
-7. **Presentation** — the frontend renders the report, citations, and visuals.
+7. **Presentation** — the frontend renders the report, sources, and visuals.
 8. **Export** — the user downloads the result as a PDF.
 
 ---
@@ -145,6 +150,9 @@ AI-Research-Agent/
 │   ├── styles/             # UI styles
 │   ├── package.json
 │   └── Dockerfile
+│
+├── docs/
+│   └── architecture.svg    # Architecture diagram
 │
 ├── .env.example
 ├── .gitignore
@@ -202,13 +210,13 @@ cd backend
 python -m venv venv
 ```
 
-**Windows:**
+**Windows**
 
 ```bash
 venv\Scripts\activate
 ```
 
-**macOS / Linux:**
+**macOS / Linux**
 
 ```bash
 source venv/bin/activate
@@ -279,9 +287,9 @@ Example request:
 
 ---
 
-## 🎯 Why this makes a strong portfolio project
+## 🎯 Why this is a strong portfolio project
 
-This project demonstrates more than API integration. It combines:
+This project demonstrates more than a single API integration. It combines:
 
 - **Agentic workflow design**
 - **LLM planning and synthesis**
@@ -294,6 +302,12 @@ This project demonstrates more than API integration. It combines:
 - **Cloud deployment**
 
 It is a practical example of connecting an AI reasoning layer to real external tools and a usable product interface.
+
+---
+
+## 🧪 Production notes
+
+The repository documents the current deployment as working in production. For a larger public deployment, consider authentication, rate limiting, structured logging, request quotas, source-quality scoring, and observability.
 
 ---
 
@@ -323,6 +337,6 @@ Built as a full-stack exploration of agentic research systems using **Gemini, Ta
 
 <div align="center">
 
-### ⭐ If this project helped or impressed you, consider starring the repo.
+### ⭐ If this project impressed you, consider starring the repo.
 
 </div>
